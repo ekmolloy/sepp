@@ -349,10 +349,10 @@ def blast_to_markers(args, genes, temp_dir):
     # Produce a BLAST file
     if args.blast_file is None:
         print("Blasting fragments against ALL markers!\n")
-        blastn = args.blast.path # + "/blastn"
+        blastn = args.blast.path + "/blastn"
         # TO DO: Do *NOT* hard code this information!!
         blastdb = args.reference.path + \
-                  "/blast/%s/alignment.fasta.db" % (args.genes)
+                  "blast/%s/alignment.db" % (args.genes)
         blast_file = output_dir + "/blast.out"
         nthreads = args.cpu
         run_blast(blastn, blastdb, input_file, blast_file, nthreads)
@@ -364,7 +364,7 @@ def blast_to_markers(args, genes, temp_dir):
     bins = dict(zip(genes, [0] * len(genes)))
 
     marker_map = read_mapping(args.reference.path + \
-                              "/blast/%s/seq2marker.tab" % (args.genes))
+                              "blast/%s/seq2marker.tab" % (args.genes))
 
     f = open(input_file, 'r')
     g = open(blast_file, 'r')
@@ -482,9 +482,9 @@ def build_abundance_profile(args, genes):
     # Or use pandas...?
     #load up taxonomy for 30 marker genes
     if (args.genes == 'markers'):
-        (taxon_map, level_map, key_map) = load_taxonomy(args.reference.path + '/refpkg/rpsB.refpkg/all_taxon.taxonomy')
+        (taxon_map, level_map, key_map) = load_taxonomy(args.reference.path + 'refpkg/rpsB.refpkg/all_taxon.taxonomy')
     else:
-        (taxon_map, level_map, key_map) = load_taxonomy(args.reference.path + '/refpkg/COG0012.refpkg/all_taxon.taxonomy')
+        (taxon_map, level_map, key_map) = load_taxonomy(args.reference.path + 'refpkg/COG0012.refpkg/all_taxon.taxonomy')
     
     #all classifications stored here  
     classifications = {}
@@ -502,7 +502,7 @@ def build_abundance_profile(args, genes):
         if nfrags > 0:
             #Get size of each marker
             total_taxa = 0
-            with open(args.reference.path + '/refpkg/%s.refpkg/%s.size' % (gene, gene_name), 'r') as f:
+            with open(args.reference.path + 'refpkg/%s.refpkg/%s.size' % (gene, gene_name), 'r') as f:
                 total_taxa = int(f.readline().strip())
         
             decomp_size = args.alignment_size
@@ -523,30 +523,30 @@ def build_abundance_profile(args, genes):
             if args.cutoff != 0:
                 extra = extra + " -C %f" % args.cutoff
     
-            markerpath = args.reference.path + "/refpkg/%s.refpkg/" % gene
+            markerpath = args.reference.path + "refpkg/%s.refpkg/" % gene
 
-            cmd = "python /projects/tallis/ekmolloy/tipp2/programs/sepp/run_tipp.py " + \
+            cmd = "run_tipp.py " + \
                   "-c %s " % args.config_file.name + \
                   "--cpu %s " % cpus + \
                   "-m %s " % args.molecule + \
-                  "-f %s " % (temp_dir + "/%s.frags.fas" % gene) + \
+                  "-f %s " % (temp_dir + "/%s.frags.fas.fixed" % gene) + \
                   "-t %s " % (markerpath + "%s.taxonomy" % gene_name) + \
                   "-adt %s " % (markerpath + "%s.tree" % gene_name) + \
                   "-a %s " % (markerpath + "%s.fasta" % gene_name) + \
                   "-r %s " % (markerpath + "%s.taxonomy.RAxML_info" % gene_name) + \
-                  "-tx %s " % (markerpath + "all_taxon.taxonomy") + \
-                  "-txm %s " % (markerpath + "species.mapping") + \
+                  "-tx %s " % markerpath + "all_taxon.taxonomy" + \
+                  "-txm %s " % markerpath + "species.mapping" + \
                   "-at %0.2f " % args.alignment_threshold + \
                   "-pt %0.2f " % 0.0 + \
                   "-A %d " % decomp_size + \
                   "-P %d " % total_taxa + \
-                  "-p %s " % (temp_dir + "/tipp_%s" % gene) + \
-                  "-o %s " % ("tipp_%s" % gene) + \
-                  "-d %s " % (output_dir + "/markers/") + \
+                  "-p %s " % (temp_dir + "/temp_file/tipp_%s" % gene) + \
+                  "-o %s  " % ("tipp_%s" % gene) + \
+                  "-d %s " % output_dir + "/markers/" + \
                   "%s" % extra
 
             print(cmd)
-            os.system(cmd)
+            #os.system(cmd)
     
     # REMOVE ALL OF THIS AND TURN IT INTO A SECOND PYTHON SCRIPT
     # OTHERWISE YOU NEED TO RE-RUN TIPP EVERYTIME YOU JUST WANT TO USE A DIFFERENT
