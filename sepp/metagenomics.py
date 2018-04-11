@@ -256,7 +256,8 @@ def read_mapping(input, header=False, delimiter='\t'):
     with open(input) as f:
         for line in f:
             if (header == True):
-                next
+                header = False
+                continue
             results = line.strip().split(delimiter)
             d[results[0]] = results[1]  # use to be just result and taking whole list
     return d
@@ -359,7 +360,7 @@ def blast_to_markers(args, genes, temp_dir):
         blastn = args.blast.path # + "/blastn"
         # TO DO: Do *NOT* hard code this information!!
         blastdb = args.reference.path + \
-                  "/blast/%s/alignment.fasta.db" % (args.genes)
+                  "/blast/%s/cogs_blast_db" % (args.genes)
         blast_file = output_dir + "/blast.out"
         nthreads = args.cpu
         run_blast(blastn, blastdb, input_file, blast_file, nthreads)
@@ -419,7 +420,11 @@ def blast_to_markers(args, genes, temp_dir):
                 seq_data = take_reverse_complement(seq_data)
             
             # Find marker
-            marker = marker_map[subject_name]
+            try:
+                marker = marker_map[subject_name]
+            except:
+                print blast_data
+                sys.exit(0)
             bins[marker] += 1
 
             gfile = gfiles[marker]
@@ -482,7 +487,7 @@ def build_abundance_profile(args, genes):
     else:
         # If using amplicon data (e.g., 16S),
         # you *still* need BLAST to determine direction of fragment (actually that's not true, amplicon data
-        # usually comes pack oriented 3' --> 5'
+        # usually comes pack oriented 3' --> 5')
         sys.exit("Not implemented yet...\n")
   
     # TO DO:
@@ -507,8 +512,14 @@ def build_abundance_profile(args, genes):
         gene_name = 'pasta'
     
     #for gene in bins.keys():
-    # for gene in ["rplB", "rplD", "rplE"]:
-    for gene in ["COG0088", "COG0090", "COG0094"]:
+    # this is temporary, for our experiments (4/10)
+    gene_set = []
+    if args.genes == 'markers':
+        gene_set = ["rplB", "rplD", "rplE"]
+    elif args.genes == 'cogs':
+        gene_set = ["COG0088", "COG0090", "COG0094"]
+
+    for gene in gene_set:
         nfrags = bins[gene]
         if nfrags > 0:
             #Get size of each marker
@@ -689,7 +700,7 @@ def main():
                  'COG0102', 'COG0103', 'COG0124', 'COG0172', 'COG0184',
                  'COG0185', 'COG0186', 'COG0197', 'COG0200', 'COG0201',
                  'COG0202', 'COG0215', 'COG0256', 'COG0495', 'COG0522',
-                 'COG0525', 'COG0533', 'COG0541', 'COG0552']
+                 'COG0525', 'COG0533', 'COG0541', 'COG0552', 'COG0085']
     else:
         print("Other gene options are not implemented yet...")
         return
