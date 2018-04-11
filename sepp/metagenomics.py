@@ -65,194 +65,201 @@ def load_taxonomy(taxonomy_file, lower=True):
     return (taxon_map, level_map, key_map)
 
 
-def distribution(classification_files, output_dir):  
-  global taxon_map,level_map,key_map,levels,level_names
-  distribution = {"species":{}, "genus":{}, "family":{}, "order":{}, "class":{}, "phylum":{}}
-  total_frags = 0  
-  for class_input in classification_files:
-    class_in = open(class_input, 'r')
-    frag_info = {"species":{'unclassified':1}, "genus":{'unclassified':1}, "family":{'unclassified':1}, "order":{'unclassified':1}, "class":{'unclassified':1}, "phylum":{'unclassified':1}}
-    (old_name,old_rank,old_probability,old_line) = ("",None,-1,"")
-    for line in class_in:          
-      results = line.strip().split(',')
-      if (len(results) > 5):
-        results = [results[0], results[1], results[2], results[-2], results[-1]]
-      (name, id, rank, probability) = (results[0], results[1], results[3], float(results[4]));
-      if (rank not in distribution):
-        continue      
-      if (old_name == ""):
-        (old_name,old_rank,old_probability,old_line) = (name,rank,probability,line)
-      if (name != old_name):
-        total_frags+=1
+def distribution(classification_files, output_dir):
+    global taxon_map, level_map, key_map, levels, level_names
+    distribution = {"species": {}, "genus": {}, "family": {}, "order": {}, "class": {}, "phylum": {}}
+    total_frags = 0
+    for class_input in classification_files:
+        class_in = open(class_input, 'r')
+        frag_info = {"species": {'unclassified': 1}, "genus": {'unclassified': 1}, "family": {'unclassified': 1},
+                     "order": {'unclassified': 1}, "class": {'unclassified': 1}, "phylum": {'unclassified': 1}}
+        (old_name, old_rank, old_probability, old_line) = ("", None, -1, "")
+        for line in class_in:
+            results = line.strip().split(',')
+            if (len(results) > 5):
+                results = [results[0], results[1], results[2], results[-2], results[-1]]
+            (name, id, rank, probability) = (results[0], results[1], results[3], float(results[4]));
+            if (rank not in distribution):
+                continue
+            if (old_name == ""):
+                (old_name, old_rank, old_probability, old_line) = (name, rank, probability, line)
+            if (name != old_name):
+                total_frags += 1
+                assert frag_info['phylum']['unclassified'] != 1
+                for clade, cladeval in frag_info.items():
+                    for clade_name, cnc in cladeval.items():
+                        if (clade_name, cnc not in distribution[clade]):
+                            distribution[clade][clade_name] = 0
+                        distribution[clade][clade_name] += cnc
+                frag_info = {"species": {'unclassified': 1}, "genus": {'unclassified': 1},
+                             "family": {'unclassified': 1}, "order": {'unclassified': 1}, "class": {'unclassified': 1},
+                             "phylum": {'unclassified': 1}}
+                (old_name, old_rank, old_probability, old_line) = (name, rank, probability, line)
+            if (id not in frag_info[rank]):
+                frag_info[rank][id] = 0
+            frag_info[rank][id] += probability
+            frag_info[rank]['unclassified'] -= probability
+        total_frags += 1
         assert frag_info['phylum']['unclassified'] != 1
         for clade, cladeval in frag_info.items():
-          for clade_name, cnc in cladeval.items():
-            if (clade_name, cnc not in distribution[clade]):
-              distribution[clade][clade_name] = 0
-            distribution[clade][clade_name]+= cnc
-        frag_info = {"species":{'unclassified':1}, "genus":{'unclassified':1}, "family":{'unclassified':1}, "order":{'unclassified':1}, "class":{'unclassified':1}, "phylum":{'unclassified':1}} 
-        (old_name,old_rank,old_probability,old_line) = (name,rank,probability,line)
-      if (id not in frag_info[rank]):
-        frag_info[rank][id] = 0
-      frag_info[rank][id]+=probability
-      frag_info[rank]['unclassified']-=probability        
-    total_frags+=1
-    assert frag_info['phylum']['unclassified'] != 1
-    for clade, cladeval in frag_info.items():
-      for clade_name, cnc in cladeval.items():
-        if (clade_name not in distribution[clade]):
-          distribution[clade][clade_name] = 0
-        distribution[clade][clade_name]+= cnc
-  
-  level_names = {1:'species', 2:'genus', 3:'family', 4:'order', 5:'class', 6:'phylum'}
-  for level in level_names:
-    f = open(output_dir + "/abundance.distribution.%s.csv" % level_names[level],'w');
-    f.write('taxa\tabundance\n')
-    lines = []
-    for clade, value in distribution[level_names[level]].items():
-      name = clade
-      if (name != 'unclassified'):
-        name = taxon_map[clade][key_map['tax_name']]      
-      lines.append('%s\t%0.4f\n' % (name,float(value)/total_frags))
-    lines.sort()
-    f.write(''.join(lines))  
-    f.close()  
-  return distribution
-  
-    
+            for clade_name, cnc in cladeval.items():
+                if (clade_name not in distribution[clade]):
+                    distribution[clade][clade_name] = 0
+                distribution[clade][clade_name] += cnc
+
+    level_names = {1: 'species', 2: 'genus', 3: 'family', 4: 'order', 5: 'class', 6: 'phylum'}
+    for level in level_names:
+        f = open(output_dir + "/abundance.distribution.%s.csv" % level_names[level], 'w');
+        f.write('taxa\tabundance\n')
+        lines = []
+        for clade, value in distribution[level_names[level]].items():
+            name = clade
+            if (name != 'unclassified'):
+                name = taxon_map[clade][key_map['tax_name']]
+            lines.append('%s\t%0.4f\n' % (name, float(value) / total_frags))
+        lines.sort()
+        f.write(''.join(lines))
+        f.close()
+    return distribution
+
+
 def remove_unclassified_level(classifications, level=6):
-  global taxon_map,level_map,key_map,levels
-  frags = list(classifications.keys())
-  for frag in frags:
-    if classifications[frag][level] == 'NA':
-      del classifications[frag]
+    global taxon_map, level_map, key_map, levels
+    frags = list(classifications.keys())
+    for frag in frags:
+        if classifications[frag][level] == 'NA':
+            del classifications[frag]
 
 
 def write_classification(class_input, output):
-  '''Writes a classification file
-  '''
-  class_out = open(output, 'w')    
-  class_out.write("fragment\tspecies\tgenus\tfamily\torder\tclass\tphylum\n");
-  keys = list(class_input.keys())
-  keys.sort()
-  for frag in keys:
-    class_out.write("%s\n" % "\t".join(class_input[frag]));
-  class_out.close()    
+    '''Writes a classification file
+    '''
+    class_out = open(output, 'w')
+    class_out.write("fragment\tspecies\tgenus\tfamily\torder\tclass\tphylum\n");
+    keys = list(class_input.keys())
+    keys.sort()
+    for frag in keys:
+        class_out.write("%s\n" % "\t".join(class_input[frag]));
+    class_out.close()
   
 #Fix problem with NA being unclassified  
-def write_abundance(classifications,output_dir, labels=True, remove_unclassified=True):
-  global taxon_map,level_map,key_map,levels  
-  
-  level_abundance = {1:{'total':0}, 2:{'total':0}, 3:{'total':0}, 4:{'total':0}, 5:{'total':0}, 6:{'total':0}}
+def write_abundance(classifications, output_dir, labels=True, remove_unclassified=True):
+    global taxon_map, level_map, key_map, levels
 
-  level_names = {1:'species', 2:'genus', 3:'family', 4:'order', 5:'class', 6:'phylum'}
-  for lineage in classifications.values():
-    #insert into level map
-    for level in range(1,7):
-      if (lineage[level] == 'NA'):        
-        if ('unclassified' not in level_abundance[level]):
-          level_abundance[level]['unclassified'] = 0      
-        level_abundance[level]['unclassified']+=1        
-        level_abundance[level]['total']+=1
-        #continue
-      else:
-        if (lineage[level] not in level_abundance[level]):
-          level_abundance[level][lineage[level]] = 0
-        level_abundance[level][lineage[level]]+=1        
-        level_abundance[level]['total']+=1    
-  for level in level_names:
-    f = open(output_dir + "/abundance.%s.csv" % level_names[level],'w');
-    f.write('taxa\tabundance\n')
-    lines = []
-    for clade in level_abundance[level]:
-      if clade == 'total':
-        continue
-      name = clade
-      if labels and name != 'unclassified':        
-        name = taxon_map[clade][key_map['tax_name']]
-      lines.append('%s\t%0.4f\n' % (name,float(level_abundance[level][clade])/level_abundance[level]['total']))
-    lines.sort()
-    f.write(''.join(lines))  
-    f.close()
-        
-def generate_classification(class_input, threshold):    
-  global taxon_map,level_map,key_map,levels
-  class_in = open(class_input, 'r')
-  level_map_hierarchy = {"species":0, "genus":1, "family":2, "order":3, "class":4, "phylum":5,"root":6}
-  #Need to keep track of last line so we can determine when we switch to new classification
-  old_name = "";
-  old_probability = 1;
-  old_id = ""; 
-  old_rank = ""; 
-  
-  #keep track of all fragment names
-  names = {}
-  classification = {}
-  for line in class_in:    
-    results = line.strip().split(',')
-    if (len(results) > 5):
-      results = [results[0], results[1], results[2], results[-2], results[-1]]
-    (name, id, rank, probability) = (results[0], results[1], results[3], float(results[4]));
-    names[name] = name;
-    if (name != old_name):
-      #when we switch to new fragment, output last classification for old fragment
-      if (old_name != ""):
+    level_abundance = {1: {'total': 0}, 2: {'total': 0}, 3: {'total': 0}, 4: {'total': 0}, 5: {'total': 0},
+                       6: {'total': 0}}
+
+    level_names = {1: 'species', 2: 'genus', 3: 'family', 4: 'order', 5: 'class', 6: 'phylum'}
+    for lineage in classifications.values():
+        # insert into level map
+        for level in range(1, 7):
+            if (lineage[level] == 'NA'):
+                if ('unclassified' not in level_abundance[level]):
+                    level_abundance[level]['unclassified'] = 0
+                level_abundance[level]['unclassified'] += 1
+                level_abundance[level]['total'] += 1
+                # continue
+            else:
+                if (lineage[level] not in level_abundance[level]):
+                    level_abundance[level][lineage[level]] = 0
+                level_abundance[level][lineage[level]] += 1
+                level_abundance[level]['total'] += 1
+    for level in level_names:
+        f = open(output_dir + "/abundance.%s.csv" % level_names[level], 'w');
+        f.write('taxa\tabundance\n')
+        lines = []
+        for clade in level_abundance[level]:
+            if clade == 'total':
+                continue
+            name = clade
+            if labels and name != 'unclassified':
+                name = taxon_map[clade][key_map['tax_name']]
+            lines.append('%s\t%0.4f\n' % (name, float(level_abundance[level][clade]) / level_abundance[level]['total']))
+        lines.sort()
+        f.write(''.join(lines))
+        f.close()
+
+
+def generate_classification(class_input, threshold):
+    global taxon_map, level_map, key_map, levels
+    class_in = open(class_input, 'r')
+    level_map_hierarchy = {"species": 0, "genus": 1, "family": 2, "order": 3, "class": 4, "phylum": 5, "root": 6}
+    # Need to keep track of last line so we can determine when we switch to new classification
+    old_name = "";
+    old_probability = 1;
+    old_id = "";
+    old_rank = "";
+
+    # keep track of all fragment names
+    names = {}
+    classification = {}
+    for line in class_in:
+        results = line.strip().split(',')
+        if (len(results) > 5):
+            results = [results[0], results[1], results[2], results[-2], results[-1]]
+        (name, id, rank, probability) = (results[0], results[1], results[3], float(results[4]));
+        names[name] = name;
+        if (name != old_name):
+            # when we switch to new fragment, output last classification for old fragment
+            if (old_name != ""):
+                lineage = taxon_map[old_id];
+                output_line = [old_name]
+                for level in levels:
+                    clade = lineage[key_map[level]];
+                    if (clade == ""):
+                        clade = "NA"
+                    output_line.append(clade)
+                classification[old_name] = output_line
+            old_name = name;
+            old_rank = "root";
+            old_probability = 1;
+            old_id = '1';
+
+        # Switch to new rank if the new probability is higher than threshold
+        # and our rank is more specific than our original rank
+        if (rank in level_map_hierarchy and (level_map_hierarchy[old_rank] > level_map_hierarchy[rank]) and (
+            probability > threshold)):
+            old_rank = rank
+            old_probability = probability
+            old_id = id
+        # Switch to new rank if the new rank matches old rank but has higher probability
+        elif (rank in level_map_hierarchy and (level_map_hierarchy[old_rank] == level_map_hierarchy[rank]) and (
+            probability > old_probability)):
+            old_rank = rank
+            old_probability = probability
+            old_id = id
+
+    if old_id in taxon_map:
         lineage = taxon_map[old_id];
-        output_line = [old_name]        
+        output_line = [old_name]
         for level in levels:
-          clade = lineage[key_map[level]];
-          if (clade == ""):
-            clade = "NA"        
-          output_line.append(clade)        
-        classification[old_name]=output_line      
-      old_name = name;
-      old_rank = "root";
-      old_probability = 1;
-      old_id = '1';
-    
-    #Switch to new rank if the new probability is higher than threshold 
-    #and our rank is more specific than our original rank
-    if (rank in level_map_hierarchy and (level_map_hierarchy[old_rank] > level_map_hierarchy[rank]) and (probability > threshold)):
-      old_rank = rank
-      old_probability = probability
-      old_id = id
-    #Switch to new rank if the new rank matches old rank but has higher probability
-    elif (rank in level_map_hierarchy and (level_map_hierarchy[old_rank] == level_map_hierarchy[rank]) and (probability > old_probability)):
-      old_rank = rank
-      old_probability = probability
-      old_id = id               
-  
-  if old_id in taxon_map:   
-    lineage = taxon_map[old_id];
-    output_line = [old_name]        
-    for level in levels:
-      clade = lineage[key_map[level]];
-      if (clade == ""):
-        clade = "NA"        
-      output_line.append(clade)        
-    classification[name]=output_line
-  return classification
+            clade = lineage[key_map[level]];
+            if (clade == ""):
+                clade = "NA"
+            output_line.append(clade)
+        classification[name] = output_line
+    return classification
 
 # NEED TO FIX ABOVE...
 
 
 def read_mapping(input, header=False, delimiter='\t'):
-  '''Read a mapping file
+    '''Read a mapping file
 
-  Parameters
-  ----------
+    Parameters
+    ----------
 
-  Returns
-  -------
-  '''
-  d = {}
-  with open(input) as f:
-      for line in f:
-        if (header == True):
-          next
-        results = line.strip().split(delimiter)        
-        d[results[0]] = results[1] # use to be just result and taking whole list
-  return d
+    Returns
+    -------
+    '''
+    d = {}
+    with open(input) as f:
+        for line in f:
+            if (header == True):
+                next
+            results = line.strip().split(delimiter)
+            d[results[0]] = results[1]  # use to be just result and taking whole list
+    return d
 
 # THIS IS FASTER...
 # Read file
@@ -474,13 +481,16 @@ def build_abundance_profile(args, genes):
             print("Finished binning the fragments!\n")
     else:
         # If using amplicon data (e.g., 16S),
-        # you *still* need BLAST to determine direction of fragment
+        # you *still* need BLAST to determine direction of fragment (actually that's not true, amplicon data
+        # usually comes pack oriented 3' --> 5'
         sys.exit("Not implemented yet...\n")
   
     # TO DO:
     # Make a class to do this?
     # Or use pandas...?
     #load up taxonomy for 30 marker genes
+    # MN: I don't think we can do this just once. It's not necessarily the same taxonomy. I guess it probably was
+    #      supposed to be but I screwed it up.
     if (args.genes == 'markers'):
         (taxon_map, level_map, key_map) = load_taxonomy(args.reference.path + '/refpkg/rpsB.refpkg/all_taxon.taxonomy')
     else:
@@ -497,7 +507,8 @@ def build_abundance_profile(args, genes):
         gene_name = 'pasta'
     
     #for gene in bins.keys():
-    for gene in ["rplB", "rplD", "rplE"]:
+    # for gene in ["rplB", "rplD", "rplE"]:
+    for gene in ["COG0088", "COG0090", "COG0094"]:
         nfrags = bins[gene]
         if nfrags > 0:
             #Get size of each marker
@@ -642,6 +653,15 @@ def argument_parser():
                       
 
 def main():
+    print '''
+    *******************************************
+    ***                                     ***
+    ***        THIS IS MIKES VERSION        ***
+    *** (comment out metagenomics.py ln 656 ***
+    ***  if I've left this in by accident)  ***
+    ***                                     ***
+    *******************************************
+    '''
     argument_parser()
     args = options()
 
