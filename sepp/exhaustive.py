@@ -304,14 +304,15 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
 
         ''' Decompose the tree based on placement subsets'''
         _LOG.info('\tDecomposing tree based on placement subsets') #MN DEBUGGING
-        temp_tree_p = os.path.join(options().tempdir,'temp_den_tree.tre')
-        tree.den_tree.write(path=temp_tree_p,
-                            schema='newick',
-                            real_value_format_specifier='.20f')
-        newdt=Tree.get(path=temp_tree_p, schema='newick', preserve_underscores=True,
-                       taxon_namespace=tree.den_tree.taxon_namespace)
-        _LOG.info('\tMade new copy of Dendropy Tree') #MN DEBUGGING
-        placement_tree_map = PhylogeneticTree(newdt).decompose_tree(
+        # temp_tree_p = os.path.join(options().tempdir,'temp_den_tree.tre')
+        # tree.den_tree.write(path=temp_tree_p,
+        #                     schema='newick',
+        #                     real_value_format_specifier='.20f')
+        # newdt=Tree.get(path=temp_tree_p, schema='newick', preserve_underscores=True,
+        #                taxon_namespace=tree.den_tree.taxon_namespace)
+        # _LOG.info('\tMade new copy of Dendropy Tree') #MN DEBUGGING
+        # placement_tree_map = PhylogeneticTree(newdt).decompose_tree(
+        placement_tree_map = PhylogeneticTree(Tree(tree.den_tree)).decompose_tree(
                                         self.options.placement_size, 
                                         strategy=self.strategy, 
                                         minSize = self.options.placement_size/int(self.options.exhaustive.placementminsubsetsizefacotr),

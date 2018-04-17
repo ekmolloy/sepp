@@ -552,7 +552,9 @@ def build_abundance_profile(args, genes):
     
             markerpath = args.reference.path + "/refpkg/%s.refpkg/" % gene
 
-            cmd = "python /projects/tallis/nute/code/sepp-erin/sepp/run_tipp.py " + \
+            # Note: This used to have Erin's version hardcoded in there
+            # cmd = "python /projects/tallis/nute/code/sepp-erin/sepp/run_tipp.py " + \
+            cmd = "python3 /projects/tallis/nute/code/sepp-erin/sepp/run_tipp.py " + \
                   "-c %s " % args.config_file.name + \
                   "--cpu %s " % cpus + \
                   "-m %s " % args.molecule + \
@@ -566,7 +568,7 @@ def build_abundance_profile(args, genes):
                   "-at %0.2f " % args.alignment_threshold + \
                   "-pt %0.2f " % 0.0 + \
                   "-A %d " % decomp_size + \
-                  "-P %d " % total_taxa + \
+                  "-P %d " % args.placement_size + \
                   "-p %s " % (temp_dir + "/tipp_%s" % gene) + \
                   "-o %s " % ("tipp_%s" % gene) + \
                   "-d %s " % (output_dir + "/markers/") + \
