@@ -147,6 +147,7 @@ class AbstractAlgorithm(object):
         else:                
             '''check input arguments'''
             self.check_options()
+            _LOG.info('options().tempdir gives: %s' % options().tempdir)
             
             '''build the problem structure'''
             self.root_problem = self.build_subproblems()
@@ -213,9 +214,8 @@ class AbstractAlgorithm(object):
         if options.alignment_size > total:
             options.alignment_size = total
             _LOG.warning("Input alignment size larger than total number of sequences!  Setting alignment size to %d" %(total)) 
-            
-        
-        _LOG.info("Decomposition Sizes are set to alignment: %d placement: %d" %(options.alignment_size, options.placement_size)) 
+
+        _LOG.info("Decomposition Sizes are set to alignment: %d, placement: %d" %(options.alignment_size, options.placement_size))
 
     def check_outputprefix(self):
         if self.outchecked:

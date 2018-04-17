@@ -300,9 +300,13 @@ class TIPPExhaustiveAlgorithm(ExhaustiveAlgorithm):
         return TIPPJoinAlignJobs(self.placer)    
         
     def build_jobs(self):
+        #MN DEBUGGING
+        _LOG.info('Building Jobs')
         assert isinstance(self.root_problem, SeppProblem)
         for placement_problem in self.root_problem.get_children():
             ''' Create placer jobs'''
+            #MN DEBUGGING
+            _LOG.info('\tCreating %s pplacer Jobs' % self.root_problem.fragment_chunks)
             for i in range(0,self.root_problem.fragment_chunks):
                 if self.placer == "pplacer":
                     pj = PplacerJob()
@@ -314,6 +318,8 @@ class TIPPExhaustiveAlgorithm(ExhaustiveAlgorithm):
                 placement_problem.add_job(get_placement_job_name(i),pj)
             
             '''For each alignment subproblem, ...'''
+            #MN DEBUGGING
+            _LOG.info('\tCreating alignment Jobs')
             for alg_problem in placement_problem.children:
                 assert isinstance(alg_problem, SeppProblem)
                 ''' create the build model job'''
@@ -329,6 +335,9 @@ class TIPPExhaustiveAlgorithm(ExhaustiveAlgorithm):
                     aj = HMMAlignJob()
                     fc_problem.add_job(aj.job_type, aj)
                     aj.partial_setup_for_subproblem(fc_problem, molecule=self.molecule)
+        #MN DEBUGGING
+        _LOG.info('\tDone Building Jobs')
+
     def connect_jobs(self):
         ''' a callback function called after hmmbuild jobs are finished'''
         def enq_job_searchfragment(result, search_job):

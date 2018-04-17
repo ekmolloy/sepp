@@ -41,6 +41,7 @@ _LOG = get_logger(__name__)
 class PhylogeneticTree(object):
     """Data structure to store phylogenetic tree, wrapping dendropy.Tree."""
     def __init__(self, dendropy_tree, map_internal_node_names = True):
+        # _LOG.info('\tinitiating PhylogeneticTree object...') #MN DEBUGGING
         self._tree = dendropy_tree
         assert isinstance(self._tree, Tree)
         self.n_leaves = self.count_leaves()
@@ -48,9 +49,12 @@ class PhylogeneticTree(object):
         self._tree.seed_node.edge.length = None
         self._namemap = None
         self._revscript = None
-        
+
+        # _LOG.info('\t (about to map sequence names)')
         if map_internal_node_names:
-           self.map_seq_names()
+            self.map_seq_names()
+        # _LOG.info('\t Done initiating PhylogeneticTree object.') #MN DEBUGGING
+
             
     def map_seq_names(self):
         i = 1

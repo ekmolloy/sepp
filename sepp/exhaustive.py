@@ -14,7 +14,7 @@ from sepp.jobs import HMMBuildJob, HMMSearchJob, HMMAlignJob, PplacerJob,\
 from sepp.scheduler import JobPool, Join
 from sepp import get_logger
 from sepp.math_utils import lcm
-import pdb
+import os
 _LOG = get_logger(__name__)
 
 def get_placement_job_name(chunk_number):
@@ -220,7 +220,7 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
                     self.distances["".join([seq1,seq2])] = hamming_distance(val1,val2)
                     self.distances["".join([seq2,seq1])] = self.distances["".join([seq1,seq2])]
 
-    def merge_results(self):    
+    def emerge_results(self):
         assert isinstance(self.root_problem,SeppProblem)
         
         '''Generate single extended alignment'''
@@ -279,8 +279,10 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         pass
 
     def build_subproblems(self):
+        _LOG.info('Building Subproblems') #MN DEBUGGING
         (alignment, tree) = self.read_alignment_and_tree()
-        
+        # _LOG.info('\tdone reading alignemtn and tree') #MN DEBUGGING
+
         if options().distance != 1:
             self.compute_distances(alignment)
         
@@ -296,10 +298,20 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         ''' Make sure size values are set, and are meaningful. '''
         self.check_and_set_sizes(alignment.get_num_taxa())        
 
+        _LOG.info('\tCreating Root Problem') #MN DEBUGGING
         self._create_root_problem(tree, alignment)
+        _LOG.info('\t\t...done') #MN DEBUGGING
 
         ''' Decompose the tree based on placement subsets'''
-        placement_tree_map = PhylogeneticTree(Tree(tree.den_tree)).decompose_tree(
+        _LOG.info('\tDecomposing tree based on placement subsets') #MN DEBUGGING
+        temp_tree_p = os.path.join(options().tempdir,'temp_den_tree.tre')
+        tree.den_tree.write(path=temp_tree_p,
+                            schema='newick',
+                            real_value_format_specifier='.20f')
+        newdt=Tree.get(path=temp_tree_p, schema='newick', preserve_underscores=True,
+                       taxon_namespace=tree.den_tree.taxon_namespace)
+        _LOG.info('\tMade new copy of Dendropy Tree') #MN DEBUGGING
+        placement_tree_map = PhylogeneticTree(newdt).decompose_tree(
                                         self.options.placement_size, 
                                         strategy=self.strategy, 
                                         minSize = self.options.placement_size/int(self.options.exhaustive.placementminsubsetsizefacotr),
@@ -310,7 +322,8 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         assert len(placement_tree_map) > 0, ("Tree could not be decomposed"
                 " given the following settings; strategy:%s minsubsetsize:%s placement_size:%s" 
                 %(self.strategy, self.minsubsetsize, self.options.placement_size))                    
-        _LOG.info("Breaking into %d placement subsets." %len(placement_tree_map))
+        _LOG.info("\tBreaking into %d placement subsets." %len(placement_tree_map))
+        _LOG.info('\t\t...done') #MN DEBUGGING
 
         ''' For placement subsets create a placement subproblem, and decompose further'''
         for (p_key,p_tree) in placement_tree_map.items():

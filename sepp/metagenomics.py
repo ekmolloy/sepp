@@ -1,5 +1,5 @@
 #from itertools import izip
-from itertools import izip
+# from itertools import izip
 import os
 import re
 from sepp.exhaustive_tipp import *
@@ -397,7 +397,7 @@ def blast_to_markers(args, genes, temp_dir):
 
         # No more data in BLAST file
         if blast_data == "":
-            print "DONE!"
+            print ("DONE!")
             break
 
         [query_name, subject_name, percent_identity, alignment_length,
@@ -423,7 +423,7 @@ def blast_to_markers(args, genes, temp_dir):
             try:
                 marker = marker_map[subject_name]
             except:
-                print blast_data
+                # print blast_data
                 sys.exit(0)
             bins[marker] += 1
 
@@ -478,6 +478,11 @@ def build_abundance_profile(args, genes):
         # If using shotgun data,
         # use BLAST to bin sequences to specific markers
         bins = blast_to_markers(args, genes, temp_dir)
+
+        #DEBUGGING: MN
+        binsf = open(os.path.join(args.outdir,'blast_bins_dict.txt'),'w')
+        binsf.write(str(bins))
+        binsf.close()
 
         if sum(bins.values()) == 0:
             print("Unable to bin any fragments!\n")
@@ -547,7 +552,7 @@ def build_abundance_profile(args, genes):
     
             markerpath = args.reference.path + "/refpkg/%s.refpkg/" % gene
 
-            cmd = "python /projects/tallis/ekmolloy/tipp2/programs/sepp/run_tipp.py " + \
+            cmd = "python /projects/tallis/nute/code/sepp-erin/sepp/run_tipp.py " + \
                   "-c %s " % args.config_file.name + \
                   "--cpu %s " % cpus + \
                   "-m %s " % args.molecule + \
@@ -660,11 +665,11 @@ def argument_parser():
                            metavar="N", 
                            default=0.0,
                            help="Placement probability requirement to count toward the distribution. "
-                                "This should be a number between 0 and 1 [default: 0.0].")    
-                      
+                                "This should be a number between 0 and 1 [default: 0.0].")
+
 
 def main():
-    print '''
+    print ('''
     *******************************************
     ***                                     ***
     ***        THIS IS MIKES VERSION        ***
@@ -672,7 +677,7 @@ def main():
     ***  if I've left this in by accident)  ***
     ***                                     ***
     *******************************************
-    '''
+    ''')
     argument_parser()
     args = options()
 

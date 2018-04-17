@@ -14,9 +14,11 @@ from sepp import get_logger
 _LOG = get_logger(__name__)
 
 def decompose_by_diameter(a_tree,strategy,max_size=None,min_size=None,max_diam=None):
+    _LOG.info('Decomposing by diameter...') #MN DEBUGGING
     def __ini_record__():
         for node in a_tree.postorder_node_iter():
                __updateNode__(node)
+    _LOG.info('\tcreated function: __ini_record__') #MN DEBUGGING
     
     def __find_midpoint_edge__(t):
         u = t.seed_node.bestLCA.anchor
@@ -27,6 +29,7 @@ def decompose_by_diameter(a_tree,strategy,max_size=None,min_size=None,max_diam=N
             u = u.parent_node
             uel = u.edge_length if u.edge_length else 0
         return u.edge
+    _LOG.info('\tcreated function: __find_midpoint_edge__') #MN DEBUGGING
     
     def __find_centroid_edge__(t):
         u = t.seed_node
@@ -48,6 +51,7 @@ def decompose_by_diameter(a_tree,strategy,max_size=None,min_size=None,max_diam=N
             u = max_child
 
         return u.edge
+    _LOG.info('\tcreated function: __find_centroid_edge__') #MN DEBUGGING
 
     def __bisect__(t,e):
 #        e = __find_centroid_edge__(t)
@@ -77,6 +81,7 @@ def decompose_by_diameter(a_tree,strategy,max_size=None,min_size=None,max_diam=N
             u = u.parent_node
 
         return t,t1
+    _LOG.info('\tcreated function: __bisect__') #MN DEBUGGING
 
     def __clean_up__(t):
         for node in t.postorder_node_iter():
@@ -87,6 +92,7 @@ def decompose_by_diameter(a_tree,strategy,max_size=None,min_size=None,max_diam=N
             delattr(node,"diameter")
 #            delattr(node,"topo_diam")
             delattr(node,"bestLCA")
+    _LOG.info('\tcreated function: __clean_up__') #MN DEBUGGING
 
     def __updateNode__(node):
         if node.is_leaf():
@@ -142,6 +148,7 @@ def decompose_by_diameter(a_tree,strategy,max_size=None,min_size=None,max_diam=N
         if d1+d2 > node.diameter:
             node.diameter = d1+d2
             node.bestLCA = node
+    _LOG.info('\tcreated function: __updateNode__') #MN DEBUGGING
 
     def __get_breaking_edge__(t,edge_type):
         if t.seed_node.nleaf <= max_size and t.seed_node.diameter <= max_diam:
@@ -158,10 +165,12 @@ def decompose_by_diameter(a_tree,strategy,max_size=None,min_size=None,max_diam=N
         if (n < min_size) or (t.seed_node.nleaf - n) < min_size:
             return None
         return e
+    _LOG.info('\tcreated function: __get_breaking_edge__') #MN DEBUGGING
 
     def __check_stop__(t):
         return ( (t.seed_node.nleaf <= max_size and t.seed_node.diameter <= max_diam) or
-                 (t.seed_node.nleaf//2 < min_size) )     
+                 (t.seed_node.nleaf//2 < min_size) )
+    _LOG.info('\tcreated function: __check_stop__') #MN DEBUGGING
 
     def __break_by_MP_centroid__(t):
         e = __get_breaking_edge__(t,'midpoint')
@@ -171,6 +180,7 @@ def decompose_by_diameter(a_tree,strategy,max_size=None,min_size=None,max_diam=N
 #        else:
 #            print("Successfully splitted by midpoint")
         return e
+    _LOG.info('\tcreated function: __break_by_MP_centroid__') #MN DEBUGGING
 
     def __break(t):
         if strategy == "centroid":
@@ -179,6 +189,7 @@ def decompose_by_diameter(a_tree,strategy,max_size=None,min_size=None,max_diam=N
             return __break_by_MP_centroid__(t)
         else:
             raise Exception("strategy not valid: %s" %strategy)
+    _LOG.info('\tcreated function: __break') #MN DEBUGGING
 
     tqueue = Queue()
     
