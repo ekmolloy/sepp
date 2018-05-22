@@ -322,11 +322,12 @@ def run_blast(blastn, blastdb, input_file, output_file, nthreads):
     Nothing, Output is written by BLAST
     """
     os.system("%s " % blastn + \
-              "-db %s " % blastdb + \
-              "-query %s " % input_file + \
-              "-out %s " % output_file + \
-              "-num_threads %d " % nthreads + \
-              "-max_target_seqs 1 -outfmt 6")
+                "-db %s " % blastdb + \
+                "-query %s " % input_file + \
+                "-out %s " % output_file + \
+                "-num_threads %d " % nthreads + \
+                # "-max_target_seqs 1 -outfmt 6")
+                "-max_target_seqs 1 -outfmt \" 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen \"")
 
 
 # Make another version where you treat blast data as
@@ -340,6 +341,7 @@ def blast_to_markers(args, genes, temp_dir):
     Uses BLAST to figure out
         1) which read goes in which marker fasta file
         2) which direction to write the read
+        3) whether to trim a non-homologous section of the read (MN added 5/18)
 
     Parameters
     ----------
@@ -400,9 +402,12 @@ def blast_to_markers(args, genes, temp_dir):
             print ("DONE!")
             break
 
+        # [query_name, subject_name, percent_identity, alignment_length,
+        #  mismatches, gap_opens, query_start, query_end, subject_start,
+        #  subject_end, evalue, bit_score] = blast_data.split('\t')
         [query_name, subject_name, percent_identity, alignment_length,
-         mismatches, gap_opens, query_start, query_end, subject_start,
-         subject_end, evalue, bit_score] = blast_data.split('\t')
+        mismatches, gap_opens, query_start, query_end, subject_start,
+        subject_end, evalue, bit_score, query_length, subject_length] = blast_data.split('\t')
 
         if fasta_name == query_name:
             query_name_old = query_name
@@ -410,12 +415,22 @@ def blast_to_markers(args, genes, temp_dir):
             query_end = int(query_end)
             subject_start = int(subject_start)
             subject_end = int(subject_end)
+            query_length = int(query_length)
+            subject_length = int(subject_length)
 
             direction = (query_end - query_start) * \
                         (subject_end - subject_start)
             
             i = i + 1
             seq_data = f.readline().replace('\n', '')
+
+            #trim sequence if sequence extends beyond reference domain:
+            if query_start==1 and (subject_end==1 or subject_end==subject_length):
+                seq_data = seq_data[:(query_end+1)]
+            elif query_end==query_length and (subject_start==1 or subject_start==subject_length):
+                seq_data = seq_data[(query_start-1):]
+
+            # take the RC if needed
             if direction < 0:
                 seq_data = take_reverse_complement(seq_data)
             
@@ -423,7 +438,7 @@ def blast_to_markers(args, genes, temp_dir):
             try:
                 marker = marker_map[subject_name]
             except:
-                # print blast_data
+                print (blast_data)
                 sys.exit(0)
             bins[marker] += 1
 
@@ -479,11 +494,6 @@ def build_abundance_profile(args, genes):
         # use BLAST to bin sequences to specific markers
         bins = blast_to_markers(args, genes, temp_dir)
 
-        #DEBUGGING: MN
-        binsf = open(os.path.join(args.outdir,'blast_bins_dict.txt'),'w')
-        binsf.write(str(bins))
-        binsf.close()
-
         if sum(bins.values()) == 0:
             print("Unable to bin any fragments!\n")
             return
@@ -515,6 +525,7 @@ def build_abundance_profile(args, genes):
     
     if (args.genes == 'cogs'):
         gene_name = 'pasta'
+        # gene_name = 'upp'   # FOR UPP RUN
     
     #for gene in bins.keys():
     # this is temporary, for our experiments (4/10)
@@ -529,8 +540,13 @@ def build_abundance_profile(args, genes):
         if nfrags > 0:
             #Get size of each marker
             total_taxa = 0
-            with open(args.reference.path + '/refpkg/%s.refpkg/%s.size' % (gene, gene_name), 'r') as f:
-                total_taxa = int(f.readline().strip())
+            if gene_name=='upp':
+                with open(args.reference.path + '/refpkg_upp/%s.refpkg/%s.size' % (gene, gene_name), 'r') as f:
+                    total_taxa = int(f.readline().strip())
+                    # FOR UPP RUN
+            else:
+                with open(args.reference.path + '/refpkg/%s.refpkg/%s.size' % (gene, gene_name), 'r') as f:
+                    total_taxa = int(f.readline().strip())
         
             decomp_size = args.alignment_size
             if (decomp_size > total_taxa):
@@ -549,18 +565,18 @@ def build_abundance_profile(args, genes):
     
             if args.cutoff != 0:
                 extra = extra + " -C %f" % args.cutoff
-    
-            markerpath = args.reference.path + "/refpkg/%s.refpkg/" % gene
 
-            # Note: This used to have Erin's version hardcoded in there
-            # cmd = "python /projects/tallis/nute/code/sepp-erin/sepp/run_tipp.py " + \
+            if gene_name=='upp':
+                markerpath = args.reference.path + "/refpkg_upp/%s.refpkg/" % gene
+            else:
+                markerpath = args.reference.path + "/refpkg/%s.refpkg/" % gene
+
             cmd = "python3 /projects/tallis/nute/code/sepp-erin/sepp/run_tipp.py " + \
                   "-c %s " % args.config_file.name + \
                   "--cpu %s " % cpus + \
                   "-m %s " % args.molecule + \
                   "-f %s " % (temp_dir + "/%s.frags.fas" % gene) + \
                   "-t %s " % (markerpath + "%s.taxonomy" % gene_name) + \
-                  "-adt %s " % (markerpath + "%s.tree" % gene_name) + \
                   "-a %s " % (markerpath + "%s.fasta" % gene_name) + \
                   "-r %s " % (markerpath + "%s.taxonomy.RAxML_info" % gene_name) + \
                   "-tx %s " % (markerpath + "all_taxon.taxonomy") + \
@@ -574,6 +590,7 @@ def build_abundance_profile(args, genes):
                   "-d %s " % (output_dir + "/markers/") + \
                   "%s" % extra
 
+            # "-adt %s " % (markerpath + "%s.tree" % gene_name) + \
             print(cmd)
             os.system(cmd)
     
@@ -667,8 +684,8 @@ def argument_parser():
                            metavar="N", 
                            default=0.0,
                            help="Placement probability requirement to count toward the distribution. "
-                                "This should be a number between 0 and 1 [default: 0.0].")
-
+                                "This should be a number between 0 and 1 [default: 0.0].")    
+                      
 
 def main():
     print ('''

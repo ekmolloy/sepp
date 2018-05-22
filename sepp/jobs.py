@@ -412,10 +412,10 @@ class HMMSearchJob(ExternalSeppJob):
                 with open(self.outfile, 'r') as outfile:
                     res = self.read_results_from_temp(outfile)
                 with open(self.outfile, 'w') as target:
-                     target.write(str(res));
+                    target.write(str(res))
                 return self.outfile
             else:
-                outfile = open(job.outfile, 'r');
+                outfile = open(job.outfile, 'r')
                 res = job.read_results_from_temp(outfile)
                 outfile.close()
                 return res
