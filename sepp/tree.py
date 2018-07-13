@@ -336,7 +336,8 @@ for l in sys.stdin.readlines():
         This function decomposes the tree until all subtrees are smaller than 
         the max size, but does not decompose below min size.  
         Two possible decompositions strategies can used: "centroid" and "longest".  
-        Returns a map containing the subtrees, in an ordered fashion.
+        Returns a map containing the subtrees, in an ordered fashion. (Technically a dictionary
+        keyed by integers).
         
         SIDE EFFECT: deroots the tree (TODO: necessary?)
         """          

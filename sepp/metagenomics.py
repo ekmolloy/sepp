@@ -7,7 +7,7 @@ from sepp.alignment import MutableAlignment
 from sepp.alignment import _write_fasta
 from sepp.config import options
 import tempfile
-import sys
+import sys, time, datetime
 
 
 """
@@ -321,14 +321,42 @@ def run_blast(blastn, blastdb, input_file, output_file, nthreads):
     -------
     Nothing, Output is written by BLAST
     """
+
+    # os.system("%s " % blastn + \
+    #             "-db %s " % blastdb + \
+    #             "-query %s " % input_file + \
+    #             "-out %s " % output_file + \
+    #             "-num_threads %d " % nthreads + \
+    #             # "-max_target_seqs 1 -outfmt 6")
+    #             "-max_target_seqs 1 -outfmt \" 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen \"")
+
+    #***  Nute removing max_target_seqs; 06/15/2018 ***#
+    print("running blast temp: %s" % datetime.datetime.now())
+    output_file_temp = output_file + '.temp'
     os.system("%s " % blastn + \
                 "-db %s " % blastdb + \
                 "-query %s " % input_file + \
-                "-out %s " % output_file + \
+                "-out %s " % output_file_temp + \
                 "-num_threads %d " % nthreads + \
-                # "-max_target_seqs 1 -outfmt 6")
-                "-max_target_seqs 1 -outfmt \" 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen \"")
+                "-outfmt \" 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen \"")
+    #pause for a bit until the file has been created, then continue
+    ct=0
+    while not os.path.isfile(output_file_temp) and ct <= 30:
+        print("temp blast file doesn't exist yet, ct=%s" % ct)
+        time.sleep(2)
+        if ct == 30:
+            raise FileNotFoundError
+        else:
+            ct += 1
 
+    os.system('awk -F \'\\t\' \'!seen[$1]++\' %s > %s' % (output_file_temp,output_file))
+    ct = 0
+    while not os.path.isfile(output_file) and ct <= 30:
+        time.sleep(2)
+        if ct == 30:
+            raise FileNotFoundError
+        else:
+            ct += 1
 
 # Make another version where you treat blast data as
 # dictionary and extract from streaming fasta file
@@ -363,6 +391,7 @@ def blast_to_markers(args, genes, temp_dir):
         # TO DO: Do *NOT* hard code this information!!
         blastdb = args.reference.path + \
                   "/blast/%s/cogs_blast_db" % (args.genes)
+
         blast_file = output_dir + "/blast.out"
         nthreads = args.cpu
         run_blast(blastn, blastdb, input_file, blast_file, nthreads)
@@ -458,7 +487,7 @@ def blast_to_markers(args, genes, temp_dir):
             fforward = True
 
         # FIX THIS TO BE MORE GENERAL...
-        if i > 10000000:
+        if i > 20000000:
             print("PROBLEM - THEORETICAL END OF FASTA - all my files had 5M seqs...\n")
             f.close()
             g.close()
@@ -672,7 +701,7 @@ def argument_parser():
                            default=None,
                            help="Blast file with fragments already binned.")  
                       
-    tippGroup.add_argument("-D", "--dist",
+    tippGroup.add_argument("-Di", "--dist",
                            dest="dist",
                            action='store_true',
                            default=False,

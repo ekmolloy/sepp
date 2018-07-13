@@ -1,5 +1,5 @@
 #from itertools import izip
-from itertools import izip
+# from itertools import izip
 import os
 import re
 from sepp.exhaustive_tipp import *
@@ -389,7 +389,7 @@ def blast_to_markers(args, genes, temp_dir):
 
         # No more data in BLAST file
         if blast_data == "":
-            print "DONE!"
+            print ("DONE!")
             break
 
         [query_name, subject_name, percent_identity, alignment_length,

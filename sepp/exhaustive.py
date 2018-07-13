@@ -279,7 +279,7 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         pass
 
     def build_subproblems(self):
-        _LOG.info('Building Subproblems') #MN DEBUGGING
+        # _LOG.info('Building Subproblems') #MN DEBUGGING
         (alignment, tree) = self.read_alignment_and_tree()
         # _LOG.info('\tdone reading alignemtn and tree') #MN DEBUGGING
 
@@ -298,20 +298,13 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         ''' Make sure size values are set, and are meaningful. '''
         self.check_and_set_sizes(alignment.get_num_taxa())        
 
-        _LOG.info('\tCreating Root Problem') #MN DEBUGGING
+        # _LOG.info('\tCreating Root Problem') #MN DEBUGGING
         self._create_root_problem(tree, alignment)
-        _LOG.info('\t\t...done') #MN DEBUGGING
+        # _LOG.info('\t\t...done') #MN DEBUGGING
 
         ''' Decompose the tree based on placement subsets'''
-        _LOG.info('\tDecomposing tree based on placement subsets') #MN DEBUGGING
-        # temp_tree_p = os.path.join(options().tempdir,'temp_den_tree.tre')
-        # tree.den_tree.write(path=temp_tree_p,
-        #                     schema='newick',
-        #                     real_value_format_specifier='.20f')
-        # newdt=Tree.get(path=temp_tree_p, schema='newick', preserve_underscores=True,
-        #                taxon_namespace=tree.den_tree.taxon_namespace)
-        # _LOG.info('\tMade new copy of Dendropy Tree') #MN DEBUGGING
-        # placement_tree_map = PhylogeneticTree(newdt).decompose_tree(
+        # _LOG.info('\tDecomposing tree based on placement subsets') #MN DEBUGGING
+
         placement_tree_map = PhylogeneticTree(Tree(tree.den_tree)).decompose_tree(
                                         self.options.placement_size, 
                                         strategy=self.strategy, 
@@ -324,7 +317,7 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
                 " given the following settings; strategy:%s minsubsetsize:%s placement_size:%s" 
                 %(self.strategy, self.minsubsetsize, self.options.placement_size))                    
         _LOG.info("\tBreaking into %d placement subsets." %len(placement_tree_map))
-        _LOG.info('\t\t...done') #MN DEBUGGING
+
 
         ''' For placement subsets create a placement subproblem, and decompose further'''
         for (p_key,p_tree) in placement_tree_map.items():

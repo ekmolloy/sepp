@@ -211,7 +211,7 @@ class HMMBuildJob(ExternalSeppJob):
         self.molecule = molecule
         self.symfrac = symfrac
         if ('options' in kwargs):
-	        self.options = kwargs['options']        
+            self.options = kwargs['options']
         
 
     def setup_for_subproblem(self, subproblem, symfrac = True, molecule = "dna",**kwargs):
@@ -235,7 +235,7 @@ class HMMBuildJob(ExternalSeppJob):
                                                        subproblem)
         self.molecule = molecule
         if ('options' in kwargs):
-	        self.options = kwargs['options']        
+            self.options = kwargs['options']
         
         
     def get_invocation(self):

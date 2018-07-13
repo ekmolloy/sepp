@@ -325,6 +325,7 @@ class TIPPExhaustiveAlgorithm(ExhaustiveAlgorithm):
                 ''' create the build model job'''
                 bj = HMMBuildJob()
                 bj.setup_for_subproblem(alg_problem,molecule=self.molecule)
+                # bj.setup_for_subproblem(alg_problem, symfrac=False, molecule=self.molecule) #Nute Testing 2018/05/31
                 alg_problem.add_job(bj.job_type, bj)
                 ''' create the search jobs'''
                 for fc_problem in alg_problem.get_children():
@@ -427,7 +428,7 @@ def augment_parser():
                       default = 0.95,
                       help = "Enough alignment subsets are selected to reach a commulative probability of N. "
                              "This should be a number between 0 and 1 [default: 0.95]")                            
-    tippGroup.add_argument("-D", "--dist", 
+    tippGroup.add_argument("-Di", "--dist",
                       dest = "distribution", action='store_true', 
                       default = False,
                       help = "Treat fragments as distribution")    
