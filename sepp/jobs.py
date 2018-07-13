@@ -701,7 +701,6 @@ class PastaAlignJob(ExternalSeppJob):
         return
         
     def get_invocation(self):
-        
         invoc = [self.path,'--num-cpus=%d' % self.threads,'-i',self.alignment, "--datatype=%s" % self.molecule,'--temporaries=%s/pastaout/' % sepp.filemgr.get_root_temp_dir(),'-j', 'pastajob','--output-directory=%s/pastaout/' % sepp.filemgr.get_root_temp_dir()]        
         return invoc
 
