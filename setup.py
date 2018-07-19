@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+w#!/usr/bin/env python
 
 ###########################################################################
 ##    Copyright 2012 Siavash Mirarab, Nam Nguyen, and Tandy Warnow.
@@ -29,7 +29,7 @@ from distutils.core import setup, Command
 from distutils.command.install import install
 from distutils.spawn import find_executable
 
-version = "4.3.5"
+version = "4.3.4"
     
 def get_tools_dir(where):
     platform_name = platform.system()
@@ -94,11 +94,11 @@ class ConfigSepp(Command):
             is_64bits = sys.maxsize > 2**32
             return "%s-%s" %(tool,"64" if is_64bits else "32")
         
-        def get_tool_name(tool,bits):
-            if platform.system() == "Darwin" or not bits:#MAC doesn't have 32/64
-                return tool
-            is_64bits = sys.maxsize > 2**32
-            return "%s-%s" %(tool,"64" if is_64bits else "32")
+        # def get_tool_name(tool,bits):
+        #     if platform.system() == "Darwin" or not bits:#MAC doesn't have 32/64
+        #         return tool
+        #     is_64bits = sys.maxsize > 2**32
+        #     return "%s-%s" %(tool,"64" if is_64bits else "32")
         
                     
         # Create the default config file
@@ -119,6 +119,7 @@ class ConfigSepp(Command):
         self.copy_tool_to_lib("hmmalign")
         self.copy_tool_to_lib("hmmsearch")
         self.copy_tool_to_lib("hmmbuild")
+        self.copy_tool_to_lib("pd")
         #TODO: should we compile and build merge.jar?
         self.copy_tool_to_lib("seppJsonMerger.jar",where="merge",bits=False)
         
@@ -146,11 +147,43 @@ class ConfigUPP(ConfigSepp):
         d.write('\n[pasta]\npath=run_pasta.py\n')            
         d.close()        
 
+class ConfigHIPPI(ConfigSepp):
+    """setuptools Command"""
+    description = "Configures HIPPI for the current user"
+    user_options = [('contained', 'c', "Whether SEPP should be installed in a self-contained manner or on user's home")]
+
+    def initialize_options(self):
+        """init options"""
+        self.initopts()
+
+    def finalize_options(self):
+        """finalize options"""
+        self.initpath("hippi.config")
+        print("\nCreating main HIPPI config file at %s and tools at %s" %(self.configfile,self.basepath))
+
+    def run(self):
+        c = open("default.main.config")
+        d = open(self.configfile, "w")
+        for l in c:
+            l = l.replace("~", self.get_tools_dest())
+            if (l.find('seppJsonMerger.jar') != -1):
+                l=l.replace('seppJsonMerger.jar','tippJsonMerger.jar')
+            d.write(l)
+
+        if os.getenv('HIPPI_PACKAGE') is None:
+            print("\nWarning! You do not have a location selected for the default HIPPI package to use as a "
+                  "reference database. If you are planning to USE HIPPI, this is recommended to greatly speed"
+                  "up your usage. To add this, simply put the folling lines in your hippi.config file:"
+                  "\n[blast]\npath=/location/of/blast_directory/blastn\n")
+            d.write('\n[hippi]\nref_package=None\n')
+        else:
+            hippi_package_loc = os.getenv('HIPPI_PACKAGE')
+            d.write('\n[hippi]\npackage_location=%s\n' % hippi_package_loc)
 
 class ConfigTIPP(ConfigSepp):
     """setuptools Command"""
     description = "Configures TIPP for the current user"
-    user_options = [('contained','c',"Whether SEPP should be installed in a self-contained manner or on user's home")]
+    user_options = [('contained','c',"Whether TIPP should be installed in a self-contained manner or on user's home")]
     
     def initialize_options(self):
         """init options"""
@@ -205,7 +238,7 @@ setup(name = "sepp",
       install_requires = ["dendropy >= 4.0.0"],
       provides = ["sepp"],
       scripts = ["run_sepp.py",'run_tipp.py','run_upp.py','run_abundance.py',"split_sequences.py","run_tipp_tool.py"],
-      cmdclass = {"config": ConfigSepp,"tipp": ConfigTIPP,"upp":ConfigUPP},
+      cmdclass = {"config": ConfigSepp,"tipp": ConfigTIPP,"upp":ConfigUPP,"hippi":ConfigHIPPI},
       data_files=[('', ['home.path'])],
 
       classifiers = ["Environment :: Console",

@@ -152,6 +152,14 @@ class EnsembleExhaustiveAlgorithm(ExhaustiveAlgorithm):
         frag_chunk_count = lcm(alg_subset_count,self.options.cpu)//alg_subset_count
         return self.read_and_divide_fragments(frag_chunk_count)
 
+class EnsembleExhaustiveAlgorithmFromPackage(EnsembleExhaustiveAlgorithm):
+    def __init__(self):
+
+        pass
+
+
+
+
 class EnsemblePackageBuildAlgorithm(EnsembleExhaustiveAlgorithm):
     next_serial_num = 1
     def __init__(self):
@@ -217,6 +225,7 @@ class EnsemblePackageBuildAlgorithm(EnsembleExhaustiveAlgorithm):
 
     def read_alignment_and_tree(self,tree_path,alignment_path):
         _LOG.info("Reading input alignment: %s" % (alignment_path))
+        self.current_alignment_path = alignment_path
         alignment = MutableAlignment()
         alignment_file = open(alignment_path,'r')
         alignment.read_file_object(alignment_file)
@@ -240,8 +249,10 @@ class EnsemblePackageBuildAlgorithm(EnsembleExhaustiveAlgorithm):
             #   it has to happen.
             _LOG.info("Starting on gene family %s" % fam)
             (alignment,tree) = self.read_alignment_and_tree(self.gene_families[fam]['tree_path'],self.gene_families[fam]['alignment_path'])
-            if options().distance != 1:
-                self.compute_distances(alignment)
+            # if options().distance != 1:
+            #     _LOG.info("computing distances...")
+            #     self.compute_distances(alignment)
+            #     _LOG.info("    ...done")
 
             assert isinstance(tree, PhylogeneticTree)
             assert isinstance(alignment, MutableAlignment)
@@ -256,6 +267,7 @@ class EnsemblePackageBuildAlgorithm(EnsembleExhaustiveAlgorithm):
 
             p_tree = PhylogeneticTree(dendropy.Tree(tree.den_tree))
             p_key = 0
+            _LOG.info('decomposing tree using alignment_file = %s' % self.current_alignment_path)
             alignment_tree_map = PhylogeneticTree(dendropy.Tree(p_tree.den_tree)).decompose_tree(
                 self.options.alignment_size,
                 strategy=self.strategy,
@@ -263,8 +275,9 @@ class EnsemblePackageBuildAlgorithm(EnsembleExhaustiveAlgorithm):
                 tree_map={},
                 decomp_strategy=self.options.decomp_strategy,
                 pdistance=options().distance,
-                distances=self.distances,
-                maxDiam=self.options.maxDiam)
+                # distances=self.distances,
+                maxDiam=self.options.maxDiam,
+                alignment_file=self.current_alignment_path)
             assert len(alignment_tree_map) > 0, ("Tree could not be decomposed"
                                                  " given the following settings; strategy:%s minsubsetsize:%s alignmet_size:%s"
                                                  % (self.strategy, self.minsubsetsize, self.options.alignment_size))
@@ -281,10 +294,14 @@ class EnsemblePackageBuildAlgorithm(EnsembleExhaustiveAlgorithm):
                 hmm_path = os.path.join(self.loc_hmms,'hmmbuild_%s_%s.hmm' % (alignment_problem.label, serial))
                 input_fasta_path = os.path.join(self.loc_fastas, 'hmmbuild_input_%s_%s.fasta' % (alignment_problem.label, serial))
                 n_seqs = alignment_problem.subalignment.get_num_taxa()
+                # p_dist = alignment_problem.subalignment.get_p_distance()
                 self.alignment_problem_directory[alignment_problem.label]={'family':fam, 'label':alignment_problem.label,
                                                                            'serial_number':serial, 'hmm_path':hmm_path,
                                                                            'fasta_path':input_fasta_path, 'a_key':str(a_key),
                                                                            'num_seqs':n_seqs}
+                    # , 'p_distance':p_dist}
+                #'p_distance':a_tree.p_distance,
+                                                                           # 'decomp_state':a_tree.decomp_state}
                 self.alignment_problem_id_lookup[serial] = alignment_problem.label
                 alignment_problem.write_subalignment_without_allgap_columns(input_fasta_path)
 
@@ -297,11 +314,17 @@ class EnsemblePackageBuildAlgorithm(EnsembleExhaustiveAlgorithm):
     def document_package_build(self):
         package_index_path = os.path.join(self.loc_package,'alignment_problem_directory.tsv')
         packdir_f = open(package_index_path,'w')
-        line_arg = '%(family)s\t%(label)s\t%(serial_number)s\t%(hmm_path)s\t%(fasta_path)s\t%(a_key)s\t%(num_seqs)s\n'
+        # line_arg = '%(family)s\t%(label)s\t%(serial_number)s\t%(hmm_path)s\t%(fasta_path)s\t%(a_key)s\t%(num_seqs)s'
+        # line_arg += '\t%(p_distance)s\t%(decomp_state)s\n'
         # line_arg = '%(family)s\t%(label)s\t%(serial_number)s\t%(hmm_path)s\t%(fasta_path)s\t%(a_key)s\n'
-        header = line_arg % {'family':'family', 'label':'label', 'serial_number':'serial_number',
-                             # 'hmm_path': 'hmm_path', 'fasta_path': 'fasta_path', 'a_key': 'a_key'}
-                             'hmm_path':'hmm_path', 'fasta_path':'fasta_path', 'a_key':'a_key', 'num_seqs':'num_seqs'}
+        line_headers = ['family','label','serial_number','hmm_path','fasta_path','a_key','num_seqs']
+                        # 'p_distance']
+                        # 'decomp_state']
+        line_arg = '\t'.join(map(lambda x: '%(' + x + ')s',line_headers)) + '\n'
+        header = line_arg % dict([(l,l) for l in line_headers])
+                 # {'family':'family', 'label':'label', 'serial_number':'serial_number',
+                 #             'hmm_path':'hmm_path', 'fasta_path':'fasta_path', 'a_key':'a_key', 'num_seqs':'num_seqs',
+                 #             'p_distance':''}
         packdir_f.write(header)
         for k in self.alignment_problem_directory.keys():
             packdir_f.write(line_arg % self.alignment_problem_directory[k])
@@ -327,12 +350,14 @@ class EnsemblePackageBuildAlgorithm(EnsembleExhaustiveAlgorithm):
         self.meta_f.write('\n')
         self.meta_f.write('Options and Settings at Build (dumped from argument parser):\n')
         for (k,v) in vars(options()).items():
+            # if isinstance(v,argparse.Namespace):
+
             self.meta_f.write('\t%s: %s\n' % (k,v))
 
         self.meta_f.write('\n\n')
         self.meta_f.close()
 
-        self.subprob_f = open(os.path.join(self.loc_package,'subproblem_structure.txt'))
+        self.subprob_f = open(os.path.join(self.loc_package,'package_subproblem_structure.txt'),'w')
         self.subprob_f.write('Subproblem Structure:\n')
         self.subprob_f.write(str(self.root_problem))
         self.subprob_f.close()

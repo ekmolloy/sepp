@@ -23,7 +23,7 @@ from dendropy import Tree, Taxon, treecalc
 from dendropy import DataSet as Dataset
 from dendropy.datamodel.treemodel import _convert_node_to_root_polytomy as convert_node_to_root_polytomy
 from sepp import get_logger, sortByValue
-from sepp.alignment import get_pdistance
+from sepp.alignment import get_pdistance, get_pdistance_from_file
 from sepp.decompose_tree import decompose_by_diameter
 
 
@@ -331,16 +331,22 @@ for l in sys.stdin.readlines():
         return tree1, tree2, e
 
 #    def decompose_tree(self, maxSize, strategy, minSize = None, tree_map={}, decomp_strategy = 'normal', pdistance = 1, distances = None):
-    def decompose_tree(self, maxSize, strategy, minSize = None, tree_map={}, decomp_strategy = 'normal', pdistance = 1, distances = None, maxDiam=None):
+    def decompose_tree(self, maxSize, strategy, minSize = None, tree_map={}, decomp_strategy = 'normal', pdistance = 1,
+                       maxDiam=None, alignment_file=None):
+    # def decompose_tree(self,*args,**kwargs):
         """
         This function decomposes the tree until all subtrees are smaller than 
         the max size, but does not decompose below min size.  
         Two possible decompositions strategies can used: "centroid" and "longest".  
-        Returns a map containing the subtrees, in an ordered fashion. (Technically a dictionary
-        keyed by integers).
+        Returns a map containing the subtrees, in an ordered fashion.
         
         SIDE EFFECT: deroots the tree (TODO: necessary?)
-        """          
+        """
+        # print(args)
+        # maxSize=args[0]
+        # print(kwargs)
+        # assert kwargs['alignment_file'] is not None
+
         # uym2 added #
         if (decomp_strategy in ["midpoint","centroid" ]):
             T = decompose_by_diameter(self._tree, strategy = decomp_strategy, max_size = maxSize,max_diam=maxDiam,min_size=minSize)
@@ -357,14 +363,17 @@ for l in sys.stdin.readlines():
             if self._tree.is_rooted == False:
                 self._tree.reroot_at_midpoint()
 
-
+        if pdistance != 1.:
+            assert alignment_file is not None
         if (decomp_strategy == 'hierarchical' and self.count_leaves() > maxSize):
             tree_map[len(tree_map)] = copy.deepcopy(self)
-        if (self.count_leaves() > maxSize or (pdistance != 1 and get_pdistance(distances, self.leaf_node_names()) > pdistance)):
+        # if (self.count_leaves() > maxSize or (pdistance != 1 and get_pdistance(distances, self.leaf_node_names()) > pdistance)):
+        if (self.count_leaves() > maxSize or (
+                pdistance != 1 and get_pdistance_from_file(alignment_file, self.leaf_node_names()) > pdistance)):
             (t1, t2, e) = self.bisect_tree(strategy, minSize)
             if e is not None:
-                t1.decompose_tree(maxSize, strategy, minSize, tree_map, decomp_strategy, pdistance, distances)
-                t2.decompose_tree(maxSize, strategy, minSize, tree_map, decomp_strategy,pdistance, distances)
+                t1.decompose_tree(maxSize, strategy, minSize, tree_map, decomp_strategy, pdistance, maxDiam, alignment_file)
+                t2.decompose_tree(maxSize, strategy, minSize, tree_map, decomp_strategy, pdistance, maxDiam, alignment_file)
             else:
                 tree_map[len(tree_map)] = self
                 _LOG.warning("It was not possible to break-down the following tree according to given subset sizes: %d , %d:\n %s" %(minSize, maxSize, self._tree))

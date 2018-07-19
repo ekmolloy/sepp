@@ -214,11 +214,13 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         self.distances = dict()
 
     def compute_distances(self, sequences):
-        for seq1, val1 in sequences.items():
-            for seq2, val2 in sequences.items():
-                if ("".join([seq1,seq2]) not in self.distances):
-                    self.distances["".join([seq1,seq2])] = hamming_distance(val1,val2)
-                    self.distances["".join([seq2,seq1])] = self.distances["".join([seq1,seq2])]
+        raise NotImplementedError
+        # self.distances={}
+        # for seq1, val1 in sequences.items():
+        #     for seq2, val2 in sequences.items():
+        #         if ("".join([seq1,seq2]) not in self.distances):
+        #             self.distances["".join([seq1,seq2])] = hamming_distance(val1,val2)
+        #             self.distances["".join([seq2,seq1])] = self.distances["".join([seq1,seq2])]
 
     def emerge_results(self):
         assert isinstance(self.root_problem,SeppProblem)
@@ -283,8 +285,9 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         (alignment, tree) = self.read_alignment_and_tree()
         # _LOG.info('\tdone reading alignemtn and tree') #MN DEBUGGING
 
-        if options().distance != 1:
-            self.compute_distances(alignment)
+        # MN (7/19/18): This method is too slow when we have large references. See the new way of doing it.
+        # if options().distance != 1:
+        #     self.compute_distances(alignment)
         
         
         assert isinstance(tree, PhylogeneticTree)

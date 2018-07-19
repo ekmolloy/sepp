@@ -28,12 +28,14 @@ from collections import Mapping
 from abc import ABCMeta
 import copy
 from sepp import get_logger
+from sepp.config import options
 import pdb
 import io
 try:
     filetypes = (io.IOBase, file)
 except NameError:
     filetypes = io.IOBase
+import subprocess, os
 
 
 _INDEL = re.compile(r"[-]")
@@ -43,6 +45,20 @@ DATASET_TAXA_ATTR = "taxon_sets"
 DATASET_CHAR_ATTR = "char_matrices"
 
 _LOG = get_logger(__name__)
+
+def get_pdistance_from_file(alignment_file, leaves, stat='mean'):
+    path = options().pdistance.path
+    n_subs = str(len(leaves))
+    invoc = [path,'-aln',alignment_file,'-n_sub',n_subs]
+    # _LOG.info('invocation: '+ ' '.join(invoc))
+    if stat=='max':
+        invoc.extend(['-max'])
+    subset_str = '\n'.join(leaves) + '\n'
+    p = subprocess.Popen(invoc,stderr=subprocess.PIPE,stdin=subprocess.PIPE,stdout=subprocess.PIPE,universal_newlines=True)
+    outs,errs = p.communicate(subset_str)
+    pd = float(outs.strip())
+    # _LOG.info('computed p-distances from file %s on %s leaves' % (os.path.split(alignment_file)[1],n_subs))
+    return pd
 
 def get_pdistance(distances, leaves, stat = 'mean'):
     """Returns the mean p-distance given a distance matrix and a set of names"""
@@ -55,7 +71,7 @@ def get_pdistance(distances, leaves, stat = 'mean'):
                 pdistance = pdistance+distances[name]
                 counts = counts + 1
             elif stat == 'max':
-                if (distance[name] > pdistance):
+                if (distances[name] > pdistance):
                     pdistance = distances[name]
 
     if (stat == 'mean'):

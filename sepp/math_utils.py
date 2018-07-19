@@ -4,6 +4,8 @@ Created on Nov 14, 2012
 @author: smirarab
 '''
 
+
+
 def gcd(a, b):
     """Return greatest common divisor using Euclid's Algorithm."""
     while b:      
