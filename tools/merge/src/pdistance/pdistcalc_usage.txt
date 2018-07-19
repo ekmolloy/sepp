@@ -1,0 +1,36 @@
+Usage for P-Distance Calculator:
+
+basic (alignment & subset in files:
+    ./pd -aln <aln_path> -sub <sub_path> -n_sub <# seqs>
+       
+Required Options:
+    -aln        path to FASTA file containing the alignment. If this is
+                not given, alignment sequences are assumed to come via
+                STDIN. If the alignment comes via stdin, nothing else 
+                can be given via STDIN. 
+            
+    -sub        path to file containing a subset of sequences to be
+                used for the computation. File should be one sequence
+                name per line, separated by newlines. Specified 
+                sequences that are not actually in the fasta are 
+                ignored. If the alignment file is provided as a path,
+                this can be omitted and given through STDIN.
+            
+    -n_sub      Number of sequences in the subset list. If omitted,
+                calculates p-dist on the whole file. If this is not 
+                given, the subset file will not be used at all.
+
+Additional Flags:                
+    -max        outputs the maximum p-distance instead of the average
+                pairwise. (default: off)
+            
+    -verbose    if given, program prints several intermediate values to
+                stdout. This includes counts of total gapped residues 
+                and total matching residues, as well as the "weighted"
+                p-distance (rather than averaging all the pairwise PDs).
+    
+    -debug      Goes into debug mode, prints some stuff and then exits.
+                Currently does a small unit test to make sure reading 
+                the sequences was working. (default: off)
+            
+    -h          Prints this help description and then terminates
