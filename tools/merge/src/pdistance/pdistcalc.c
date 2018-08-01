@@ -604,8 +604,8 @@ int main(int argc, char *argv[]) {
         printf("   verbose results:\n");
         printf("   Running Total: %e\n",runtot);
         printf("   Running Count: %d\n",runct);
-        printf("   Total Ungapped Residues: %ll\n",all_comp);
-        printf("   Total Matching Residues: %ll\n", all_same);
+        printf("   Total Ungapped Residues: %lld\n",all_comp);
+        printf("   Total Matching Residues: %lld\n", all_same);
         printf("   Weighted ANHD: %.8f\n\n",1.0 - (double)all_same / (double)all_comp);
     }
 
