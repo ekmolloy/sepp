@@ -1,4 +1,4 @@
-w#!/usr/bin/env python
+#!/usr/bin/env python
 
 ###########################################################################
 ##    Copyright 2012 Siavash Mirarab, Nam Nguyen, and Tandy Warnow.
