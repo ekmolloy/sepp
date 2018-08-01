@@ -36,7 +36,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "pdistcalc.h"
+// #include "pdistcalc.h"
 
 //
 //  Struct Definitions and Prototypes
@@ -123,7 +123,7 @@ char *usage =
         "                                                                           \n"
         "    -verbose    if given, program prints several intermediate values to    \n"
         "                stdout. This includes counts of total gapped residues      \n"
-        "                and total matching residues, as well as the "weighted"     \n"
+        "                and total matching residues, as well as the ``weighted``   \n"
         "                p-distance (rather than averaging all the pairwise PDs).   \n"
         "                                                                           \n"
         "    -debug      Goes into debug mode, prints some stuff and then exits.    \n"
