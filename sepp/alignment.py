@@ -542,12 +542,12 @@ class ExtendedAlignment(MutableAlignment):
         
         self.from_string_to_bytearray()
         for path in paths:
-            _LOG.debug("Reading sto extended alignment: %s." %(path))
+            # _LOG.debug("Reading sto extended alignment: %s." %(path))
             ext = ExtendedAlignment(self.fragments)            
             ext.read_extended_alignment(path)  
-            _LOG.info("Merging extension sto file (%s) into base alignment (%s)." %(path,base_alignment))             
+            # _LOG.info("Merging extension sto file (%s) into base alignment (%s)." %(path,base_alignment))
             self.merge_in(ext,False)
-            _LOG.debug("Finished merging extension sto file (%s) into base alignment (%s)." %(path,base_alignment))
+            # _LOG.debug("Finished merging extension sto file (%s) into base alignment (%s)." %(path,base_alignment))
             del ext
         if convert_to_string:
             self.from_bytearray_to_string() 

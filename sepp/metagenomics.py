@@ -29,6 +29,14 @@ global taxon_map, level_map, key_map
 
 global levels
 levels = ["species", "genus", "family", "order", "class", "phylum"]
+coglist = ['COG0012', 'COG0016', 'COG0018', 'COG0048', 'COG0049',
+             'COG0052', 'COG0080', 'COG0081', 'COG0087', 'COG0088',
+             'COG0090', 'COG0091', 'COG0092', 'COG0093', 'COG0094',
+             'COG0096', 'COG0097', 'COG0098', 'COG0099', 'COG0100',
+             'COG0102', 'COG0103', 'COG0124', 'COG0172', 'COG0184',
+             'COG0185', 'COG0186', 'COG0197', 'COG0200', 'COG0201',
+             'COG0202', 'COG0215', 'COG0256', 'COG0495', 'COG0522',
+             'COG0525', 'COG0533', 'COG0541', 'COG0552', 'COG0085']
 
 #TODO Fix parameter passing
 #TODO Make taxonomy loading a class
@@ -390,7 +398,9 @@ def blast_to_markers(args, genes, temp_dir):
         blastn = args.blast.path # + "/blastn"
         # TO DO: Do *NOT* hard code this information!!
         blastdb = args.reference.path + \
-                  "/blast/%s/cogs_blast_db" % (args.genes)
+                  "/blast/%s/alignment.fasta" % (args.genes)
+                  # "/blast/%s/cogs_blast_db" % (args.genes)
+
 
         blast_file = output_dir + "/blast.out"
         nthreads = args.cpu
@@ -562,8 +572,10 @@ def build_abundance_profile(args, genes):
     if args.genes == 'markers':
         gene_set = ["rplB", "rplD", "rplE"]
     elif args.genes == 'cogs':
-        gene_set = ["COG0088", "COG0090", "COG0094"]
+        # gene_set = ["COG0088", "COG0090", "COG0094"]
+        gene_set = coglist.copy()
 
+    cmdfile=open(os.path.join(output_dir,'command_list.txt'),'w')
     for gene in gene_set:
         nfrags = bins[gene]
         if nfrags > 0:
@@ -610,19 +622,21 @@ def build_abundance_profile(args, genes):
                   "-r %s " % (markerpath + "%s.taxonomy.RAxML_info" % gene_name) + \
                   "-tx %s " % (markerpath + "all_taxon.taxonomy") + \
                   "-txm %s " % (markerpath + "species.mapping") + \
-                  "-at %0.2f " % args.alignment_threshold + \
+                  "-at %0.2f " % 0.0 + \
                   "-pt %0.2f " % 0.0 + \
                   "-A %d " % decomp_size + \
                   "-P %d " % args.placement_size + \
                   "-p %s " % (temp_dir + "/tipp_%s" % gene) + \
                   "-o %s " % ("tipp_%s" % gene) + \
-                  "-d %s " % (output_dir + "/markers/") + \
+                  "-d %s -tiny " % (output_dir + "/markers/") + \
                   "%s" % extra
-
+            cmdfile.write(cmd + '\n\n*******\n\n')
+            # "-at %0.2f " % args.alignment_threshold + \
+            # "-pt %0.2f " % 0.0 + \
             # "-adt %s " % (markerpath + "%s.tree" % gene_name) + \
             print(cmd)
             os.system(cmd)
-    
+
     # REMOVE ALL OF THIS AND TURN IT INTO A SECOND PYTHON SCRIPT
     # OTHERWISE YOU NEED TO RE-RUN TIPP EVERYTIME YOU JUST WANT TO USE A DIFFERENT
     # PLACEMENT THRESHOLD... 
@@ -645,7 +659,7 @@ def build_abundance_profile(args, genes):
     #if (options().dist == True):
     #    distribution(classification_files, output_directory)
 
-    return
+
 
 
 def argument_parser():
@@ -717,15 +731,6 @@ def argument_parser():
                       
 
 def main():
-    print ('''
-    *******************************************
-    ***                                     ***
-    ***        THIS IS MIKES VERSION        ***
-    *** (comment out metagenomics.py ln 656 ***
-    ***  if I've left this in by accident)  ***
-    ***                                     ***
-    *******************************************
-    ''')
     argument_parser()
     args = options()
 

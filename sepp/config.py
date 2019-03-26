@@ -223,10 +223,22 @@ def _init_parser():
                       default = "dna", 
                       help = "Molecule type of sequences. Can be amino, dna, or rna "
                              "[default: %(default)s]")
+    inputGroup.add_argument("-pa", "--package",
+                        dest="package_location", metavar="PACKAGE", default=None,
+                        type = valid_dir_path,
+                        help = "Location of the SEPP/HIPPI/TIPP package to be used (or "
+                               "created, if '-mkpkg' is also included).")
+    inputGroup.add_argument("-mkpkg", "--make_new_package", dest = 'build_package',
+                            action='store_true',default=False,
+                            help= "If included, TIPP/SEPP/HIPPI will not run but will "
+                                  "create a new package with all the decomposition files "
+                                  "pre-built and stored. If this option is specified for "
+                                  "HIPPI, the '-ro' flag must also be given with the path "
+                                  "to the roster (see HIPPI help screen).")
                              
     otherGroup = _parser.add_argument_group( "Other options".upper(), 
                          "These options control how SEPP is run")
-    _parser.groups['otherGroup'] = otherGroup                          
+    _parser.groups['otherGroup'] = otherGroup
     otherGroup.add_argument("-x", "--cpu", type = set_cpu, 
                       dest = "cpu", metavar = "N", 
                       default = set_cpu(cpu_count()),
@@ -241,7 +253,11 @@ def _init_parser():
                       dest = "checkpoint_interval", metavar = "N", 
                       default = 3600,
                       help = "Interval (in seconds) between checkpoint writes. Has effect only with -cp provided."
-                             "[default: 3600]") 
+                             "[default: 3600]")
+    otherGroup.add_argument("-tiny", "--noOutputAlignment",
+                            dest="no_output_alignment", action='store_true',
+                            default=False,
+                            help="If given, program will not write the output alignments to disk, to save space.")
     otherGroup.add_argument("-seed", "--randomseed", type = int, 
                       dest = "seed", metavar = "N", 
                       default = 297834,

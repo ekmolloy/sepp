@@ -222,7 +222,7 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         #             self.distances["".join([seq1,seq2])] = hamming_distance(val1,val2)
         #             self.distances["".join([seq2,seq1])] = self.distances["".join([seq1,seq2])]
 
-    def emerge_results(self):
+    def merge_results(self):
         assert isinstance(self.root_problem,SeppProblem)
         
         '''Generate single extended alignment'''
@@ -259,11 +259,13 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         ''' Merged json file is already saved in merge_results function and
             full extended alignment already created in merge_results function
         '''
+        _LOG.info('about to output results. value of no_output_alignment: %s' % options().no_output_alignment)
         outfilename = self.get_output_filename("alignment.fasta")
-        self.results .write_to_path(outfilename)
-        self.results.remove_insertion_columns()
-        outfilename = self.get_output_filename("alignment_masked.fasta")
-        self.results.write_to_path(outfilename)
+        if not options().no_output_alignment:
+            self.results .write_to_path(outfilename)
+            self.results.remove_insertion_columns()
+            outfilename = self.get_output_filename("alignment_masked.fasta")
+            self.results.write_to_path(outfilename)
         namerev_script = self.root_problem.subtree.rename_script()
         if namerev_script:
             outfilename = self.get_output_filename("rename-json.py")
@@ -273,7 +275,7 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
 
     def check_options(self, supply = []):
         if (options().info_file is None):
-            supply = supply + ["raxml file"];
+            supply = supply + ["raxml file"]
         AbstractAlgorithm.check_options(self,supply)
 
 
@@ -296,7 +298,7 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
         tree.get_tree().resolve_polytomies()
         # Label edges with numbers so that we could assemble things back
         # at the end
-        tree.lable_edges()        
+        tree.lable_edges()
 
         ''' Make sure size values are set, and are meaningful. '''
         self.check_and_set_sizes(alignment.get_num_taxa())        
@@ -314,7 +316,7 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
                                         minSize = self.options.placement_size/int(self.options.exhaustive.placementminsubsetsizefacotr),
                                         tree_map = {}, pdistance = 1,
                                         decomp_strategy = self.decomp_strategy, 
-                                        distances = self.distances,
+                                        # distances = self.distances,
                                         maxDiam = None)
         assert len(placement_tree_map) > 0, ("Tree could not be decomposed"
                 " given the following settings; strategy:%s minsubsetsize:%s placement_size:%s" 
@@ -337,7 +339,7 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
                                         tree_map = {}, 
                                         decomp_strategy = self.options.decomp_strategy,
                                         pdistance = options().distance,
-                                        distances = self.distances,
+                                        # distances = self.distances,
                                         maxDiam = self.options.maxDiam)
             assert len(alignment_tree_map) > 0, ("Tree could not be decomposed"
             " given the following settings; strategy:%s minsubsetsize:%s alignmet_size:%s" 
@@ -433,5 +435,21 @@ class ExhaustiveAlgorithm(AbstractAlgorithm):
             for ap in p.children:
                 JobPool().enqueue_job(ap.jobs["hmmbuild"])
 
+class ExhaustivePackageBuildAlgorithm(ExhaustiveAlgorithm):
+    next_serial_num = 1
+    package_specs = {}
+    def __init__(self,*args,**kwargs):
+        ExhaustiveAlgorithm.__init__(self,*args,**kwargs)
+
+    def check_options(self, *args, **kwargs):
+        ExhaustiveAlgorithm.check_options(self,*args, **kwargs)
+        self.package_specs['alignment_file_path'] = os.path.abspath(self.options.alignment_file.name)
+        self.package_specs['tree_file_path'] = os.path.abspath(self.options.alignment_file.name)
+        self.package_specs['info_file_path'] = os.path.abspath(self.options.info_file.name)
+        self.package_specs['package_location'] = os.path.abspath(self.options.package_location)
+
+
+
 if __name__ == '__main__':
     ExhaustiveAlgorithm().run()
+
